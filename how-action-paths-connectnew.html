@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>How Action Paths Connect — CMR Standard-Case Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #0b1727;
+    --ink-soft:   #475569;
+    --muted:      #94a3b8;
+    --line:       #e2e8f0;
+    --line-soft:  #f1f5f9;
+    --bg:         #fafafa;
+    --surface:    #ffffff;
+
+    --brand:      #0074AD;
+    --brand-deep: #003D5C;
+    --brand-tint: #EAF6FA;
+
+    /* Pattern colors — 5 distinct paths */
+    --p-a:      #94a3b8;  --p-a-tint: #f1f5f9;  /* No action — neutral gray */
+    --p-b:      #0074AD;  --p-b-tint: #EAF6FA;  /* Hold — brand blue */
+    --p-c:      #492782;  --p-c-tint: #F5EFFF;  /* Ghost — purple */
+    --p-d:      #d97706;  --p-d-tint: #FDF7E7;  /* Delete — amber */
+    --p-e:      #B22D31;  --p-e-tint: #FFEFF0;  /* Delete + blocklist — red */
+
+    --strong:      #168568;
+    --strong-tint: #C6F7DA;
+    --soft-bar:    #B22D31;
+    --soft-tint:   #FFEFF0;
+
+    --t-fast: 200ms cubic-bezier(.4,0,.2,1);
+    --t-med:  420ms cubic-bezier(.4,0,.2,1);
+    --t-slow: 700ms cubic-bezier(.4,0,.2,1);
+
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
+    --shadow-md: 0 4px 12px rgba(15,23,42,.06), 0 2px 4px rgba(15,23,42,.04);
+    --shadow-lg: 0 18px 40px rgba(15,23,42,.10), 0 6px 14px rgba(15,23,42,.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Montserrat", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 22px 40px;
+  }
+
+  /* =============== HEADER =============== */
+  .page-header {
+    margin-bottom: 22px;
+  }
+  .page-header h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--brand-deep);
+    letter-spacing: -0.018em;
+    line-height: 1.15;
+  }
+  .page-header p {
+    margin: 0;
+    font-size: 15.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    max-width: 720px;
+  }
+  .page-header p strong {
+    color: var(--brand-deep);
+    font-weight: 700;
+  }
+
+  /* =============== PROGRESS =============== */
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .progress-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .progress-label strong { color: var(--ink); font-weight: 700; }
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--line-soft);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--p-a), var(--p-b), var(--p-c), var(--p-d), var(--p-e));
+    border-radius: 999px;
+    transition: width var(--t-slow);
+  }
+
+  /* =============== ZONE HEADERS =============== */
+  .zone-header {
+    margin: 28px 0 14px;
+  }
+  .zone-tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--brand);
+    margin-bottom: 4px;
+  }
+  .zone-h {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--brand-deep);
+    margin: 0 0 4px;
+    letter-spacing: -0.012em;
+  }
+  .zone-sub {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* =============== PATTERN CARDS =============== */
+  .patterns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pattern {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px 22px;
+    cursor: pointer;
+    transition: transform var(--t-fast), box-shadow var(--t-fast),
+                border-color var(--t-fast);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    border-left: 4px solid var(--p-color);
+  }
+  .pattern:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .pattern:focus-visible {
+    outline: 2px solid var(--p-color);
+    outline-offset: 2px;
+  }
+  .pattern.expanded {
+    cursor: default;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--p-color);
+  }
+  .pattern.reviewed::after {
+    content: "";
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--strong);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='20 6 9 17 4 12'/></svg>");
+    background-size: 13px;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  .pattern-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .pattern-tag {
+    background: var(--p-tint);
+    color: var(--p-color);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+  }
+
+  .pattern-titles { min-width: 0; }
+  .pattern-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--brand-deep);
+    margin: 0 0 2px;
+    line-height: 1.25;
+  }
+  .pattern-sub {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .pattern-cta {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--p-color);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    opacity: 0.7;
+    transition: opacity var(--t-fast);
+  }
+  .pattern:hover .pattern-cta { opacity: 1; }
+  .pattern.expanded .pattern-cta { display: none; }
+  .pattern.reviewed .pattern-cta { display: none; }
+
+  /* Expanded body */
+  .pattern-body {
+    display: none;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .pattern.expanded .pattern-body {
+    display: block;
+    animation: fadeUp var(--t-med);
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Action path flow */
+  .path-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .path {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--p-tint);
+    border: 1px solid var(--p-color);
+    padding: 8px 14px 8px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--brand-deep);
+  }
+  .step.final {
+    background: var(--p-color);
+    color: white;
+    border-color: var(--p-color);
+  }
+  .step.final.muted {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--p-color);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .step.final:not(.muted) .step-num {
+    background: white;
+    color: var(--p-color);
+  }
+  .step.final.muted .step-num { display: none; }
+  .arrow {
+    color: var(--p-color);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  /* Examples + note */
+  .ex-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .ex-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .ex-pill {
+    background: var(--p-tint);
+    color: var(--brand-deep);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  .inline-note {
+    margin-top: 14px;
+    padding: 10px 14px 10px 12px;
+    background: #FDF7E7;
+    border-left: 3px solid #FEBE14;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .inline-note strong {
+    color: #92400e;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .pattern-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .btn {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border-color: var(--line);
+  }
+  .btn-ghost:hover { background: var(--line-soft); color: var(--ink); }
+  .btn-primary {
+    background: var(--p-color);
+    color: white;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+
+  /* =============== DRILL =============== */
+  .drill {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 24px 26px;
+    margin-top: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .drill.locked {
+    opacity: 0.55;
+    pointer-events: none;
+    background: var(--line-soft);
+  }
+  .drill-locked-msg {
+    text-align: center;
+    color: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 20px 0;
+  }
+  .drill-locked-msg.hidden { display: none; }
+
+  .drill-content { display: none; }
+  .drill-content.active { display: block; }
+
+  .drill-question {
+    margin-bottom: 18px;
+  }
+  .q-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .q-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 0 4px;
+    line-height: 1.45;
+  }
+  .q-context {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin: 0 0 14px;
+    line-height: 1.45;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .option {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.4;
+    transition: all var(--t-fast);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .option:hover {
+    border-color: var(--brand);
+    background: var(--brand-tint);
+    transform: translateY(-1px);
+  }
+  .option-letter {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--line-soft);
+    color: var(--ink-soft);
+    text-align: center;
+    line-height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .option:hover .option-letter {
+    background: var(--brand);
+    color: white;
+  }
+  .option.correct {
+    border-color: var(--strong);
+    background: var(--strong-tint);
+  }
+  .option.correct .option-letter {
+    background: var(--strong);
+    color: white;
+  }
+  .option.incorrect {
+    border-color: var(--soft-bar);
+    background: var(--soft-tint);
+  }
+  .option.incorrect .option-letter {
+    background: var(--soft-bar);
+    color: white;
+  }
+  .option:disabled {
+    cursor: default;
+    opacity: 0.55;
+  }
+  .option:disabled:hover {
+    transform: none;
+  }
+  .option.correct:disabled, .option.incorrect:disabled { opacity: 1; }
+
+  .feedback {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid;
+    animation: fadeUp var(--t-med);
+  }
+  .feedback h4 {
+    margin: 0 0 4px;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .feedback p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .feedback.right {
+    background: var(--strong-tint);
+    border-color: var(--strong);
+  }
+  .feedback.right h4 { color: var(--strong); }
+  .feedback.wrong {
+    background: var(--soft-tint);
+    border-color: var(--soft-bar);
+  }
+  .feedback.wrong h4 { color: var(--soft-bar); }
+
+  .drill-next {
+    margin-top: 16px;
+    background: var(--brand);
+    color: white;
+    border: none;
+    padding: 11px 22px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--t-fast), transform var(--t-fast);
+  }
+  .drill-next:hover { background: var(--brand-deep); transform: translateY(-1px); }
+
+  .drill-final {
+    text-align: center;
+    padding: 20px 0 8px;
+  }
+  .drill-final h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--brand-deep);
+    margin: 0 0 8px;
+  }
+  .drill-final p {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    margin: 0 0 18px;
+    line-height: 1.55;
+  }
+  .drill-score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    background: var(--brand-tint);
+    color: var(--brand-deep);
+    padding: 10px 22px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .drill-score .num {
+    font-size: 28px;
+    font-weight: 800;
+  }
+  .drill-score .total {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .drill-restart {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+    padding: 9px 18px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .drill-restart:hover { background: var(--line-soft); color: var(--ink); }
+
+  /* =============== SOAA REFERENCE =============== */
+  .soaa-ref {
+    background: var(--brand-tint);
+    border: 1.5px solid var(--brand);
+    border-radius: var(--radius-md);
+    padding: 18px 22px;
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .soaa-icon {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: white;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .soaa-body { flex: 1; min-width: 0; }
+  .soaa-body h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--brand-deep);
+  }
+  .soaa-body p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .soaa-link {
+    background: var(--brand);
+    color: white;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all var(--t-fast);
+  }
+  .soaa-link:hover {
+    background: var(--brand-deep);
+    transform: translateY(-1px);
+  }
+
+  /* =============== UTIL =============== */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .pattern-head { grid-template-columns: 1fr; gap: 8px; }
+    .pattern-cta { display: none; }
+    .pattern:hover .pattern-cta { display: none; }
+    .soaa-ref { flex-direction: column; text-align: center; }
+    .path { gap: 6px; }
+    .step { font-size: 12.5px; padding: 6px 10px 6px 6px; }
+    .arrow { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ========== HEADER ========== -->
+  <div class="page-header">
+    <h1>How action paths connect</h1>
+    <p>Most CMR cases follow one of <strong>five action paths</strong>. Recognize the pattern, and the right tag, request action, and account action fall into place.</p>
+  </div>
+
+  <!-- ========== PROGRESS ========== -->
+  <div class="progress" role="status" aria-live="polite">
+    <span class="progress-label"><strong id="progressCount">0</strong> of 5 patterns explored</span>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- ========== ZONE 1: PATTERNS ========== -->
+  <div class="zone-header">
+    <div class="zone-tag">PART 1</div>
+    <h2 class="zone-h">The five patterns</h2>
+    <p class="zone-sub">Tap each pattern to see the full action path, examples from the Summary of Admin Actions & Tagging, and any documentation notes.</p>
+  </div>
+
+  <div class="patterns" id="patterns">
+
+    <!-- PATTERN A — No action -->
+    <article class="pattern" data-id="a" tabindex="0" role="button" aria-expanded="false"
+      style="--p-color: var(--p-a); --p-tint: var(--p-a-tint);">
+      <div class="pattern-head">
+        <div class="pattern-tag">PATTERN A</div>
+        <div class="pattern-titles">
+          <h3 class="pattern-name">No account action</h3>
+          <p class="pattern-sub">Tag the violation, but the user keeps their account.</p>
+        </div>
+        <span class="pattern-cta">Explore →</span>
+      </div>
+      <div class="pattern-body">
+        <div class="path-label">The path</div>
+        <div class="path">
+          <div class="step"><span class="step-num">1</span>Tag violation</div>
+          <span class="arrow">→</span>
+          <div class="step"><span class="step-num">2</span>Delete request</div>
+          <span class="arrow">→</span>
+          <div class="step final muted">No account action</div>
+        </div>
+        <div class="ex-label">Examples from Summary of Admin Actions &amp; Tagging</div>
+        <div class="ex-list">
+          <span class="ex-pill">Mismatched category</span>
+          <span class="ex-pill">Non-US service location</span>
+          <span class="ex-pill">Barter or free service</span>
+          <span class="ex-pill">Questionable name</span>
+          <span class="ex-pill">Test posts</span>
+          <span class="ex-pill">Not a service</span>
+          <span class="ex-pill">Seeking job or partnership</span>
+          <span class="ex-pill">Mild legally questionable</span>
+          <span class="ex-pill">Mild inappropriate language</span>
+        </div>
+        <div class="pattern-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+          <button class="btn btn-primary" data-review>Got it ✓</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- PATTERN B — Hold -->
+    <article class="pattern" data-id="b" tabindex="0" role="button" aria-expanded="false"
+      style="--p-color: var(--p-b); --p-tint: var(--p-b-tint);">
+      <div class="pattern-head">
+        <div class="pattern-tag">PATTERN B</div>
+        <div class="pattern-titles">
+          <h3 class="pattern-name">Hold the account</h3>
+          <p class="pattern-sub">Pause activity for further investigation. No permanent action yet.</p>
+        </div>
+        <span class="pattern-cta">Explore →</span>
+      </div>
+      <div class="pattern-body">
+        <div class="path-label">The path</div>
+        <div class="path">
+          <div class="step"><span class="step-num">1</span>Tag violation</div>
+          <span class="arrow">→</span>
+          <div class="step"><span class="step-num">2</span>Delete request</div>
+          <span class="arrow">→</span>
+          <div class="step final"><span class="step-num">3</span>Hold the account</div>
+        </div>
+        <div class="ex-label">Examples from Summary of Admin Actions &amp; Tagging</div>
+        <div class="ex-list">
+          <span class="ex-pill">Spammy customer (5+ signals, doesn't meet ghost criteria)</span>
+          <span class="ex-pill">Spammy pro (5+ signals, doesn't meet delete/blocklist criteria)</span>
+        </div>
+        <div class="inline-note">
+          <strong>Note</strong>The Hold reason should match the investigation type — for spammy cases, "User being investigated — Deceptive Practices."
+        </div>
+        <div class="pattern-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+          <button class="btn btn-primary" data-review>Got it ✓</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- PATTERN C — Ghost -->
+    <article class="pattern" data-id="c" tabindex="0" role="button" aria-expanded="false"
+      style="--p-color: var(--p-c); --p-tint: var(--p-c-tint);">
+      <div class="pattern-head">
+        <div class="pattern-tag">PATTERN C</div>
+        <div class="pattern-titles">
+          <h3 class="pattern-name">Ghost the account</h3>
+          <p class="pattern-sub">Make the account invisible to the platform without deleting it.</p>
+        </div>
+        <span class="pattern-cta">Explore →</span>
+      </div>
+      <div class="pattern-body">
+        <div class="path-label">The path</div>
+        <div class="path">
+          <div class="step"><span class="step-num">1</span>Tag violation</div>
+          <span class="arrow">→</span>
+          <div class="step final"><span class="step-num">2</span>Ghost the account</div>
+        </div>
+        <div class="ex-label">Example from Summary of Admin Actions &amp; Tagging</div>
+        <div class="ex-list">
+          <span class="ex-pill">Spammy customer (signals meeting ghost criteria, no delete/blocklist)</span>
+        </div>
+        <div class="inline-note">
+          <strong>Note</strong>Ghost cases don't require deleting the request — the request is left in place while the account is hidden.
+        </div>
+        <div class="pattern-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+          <button class="btn btn-primary" data-review>Got it ✓</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- PATTERN D — Delete -->
+    <article class="pattern" data-id="d" tabindex="0" role="button" aria-expanded="false"
+      style="--p-color: var(--p-d); --p-tint: var(--p-d-tint);">
+      <div class="pattern-head">
+        <div class="pattern-tag">PATTERN D</div>
+        <div class="pattern-titles">
+          <h3 class="pattern-name">Delete the account</h3>
+          <p class="pattern-sub">Remove the account permanently, but no blocklist entry.</p>
+        </div>
+        <span class="pattern-cta">Explore →</span>
+      </div>
+      <div class="pattern-body">
+        <div class="path-label">The path</div>
+        <div class="path">
+          <div class="step"><span class="step-num">1</span>Tag violation</div>
+          <span class="arrow">→</span>
+          <div class="step"><span class="step-num">2</span>Delete request</div>
+          <span class="arrow">→</span>
+          <div class="step final"><span class="step-num">3</span>Delete the account</div>
+        </div>
+        <div class="ex-label">Example from Summary of Admin Actions &amp; Tagging</div>
+        <div class="ex-list">
+          <span class="ex-pill">Minor user (13–17)</span>
+        </div>
+        <div class="inline-note">
+          <strong>Note</strong>Document the exact age if known. If unknown, use the age range on the request.
+        </div>
+        <div class="pattern-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+          <button class="btn btn-primary" data-review>Got it ✓</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- PATTERN E — Delete + Blocklist -->
+    <article class="pattern" data-id="e" tabindex="0" role="button" aria-expanded="false"
+      style="--p-color: var(--p-e); --p-tint: var(--p-e-tint);">
+      <div class="pattern-head">
+        <div class="pattern-tag">PATTERN E</div>
+        <div class="pattern-titles">
+          <h3 class="pattern-name">Delete and blocklist</h3>
+          <p class="pattern-sub">Remove the account and add to the blocklist to prevent re-registration.</p>
+        </div>
+        <span class="pattern-cta">Explore →</span>
+      </div>
+      <div class="pattern-body">
+        <div class="path-label">The path</div>
+        <div class="path">
+          <div class="step"><span class="step-num">1</span>Tag violation</div>
+          <span class="arrow">→</span>
+          <div class="step"><span class="step-num">2</span>Delete request</div>
+          <span class="arrow">→</span>
+          <div class="step"><span class="step-num">3</span>Delete account</div>
+          <span class="arrow">→</span>
+          <div class="step final"><span class="step-num">4</span>Add to blocklist</div>
+        </div>
+        <div class="ex-label">Examples from Summary of Admin Actions &amp; Tagging</div>
+        <div class="ex-list">
+          <span class="ex-pill">Minor user (under 12)</span>
+          <span class="ex-pill">Sexual content</span>
+          <span class="ex-pill">Discrimination (slurs)</span>
+          <span class="ex-pill">Severe inappropriate content</span>
+          <span class="ex-pill">Severe legally questionable</span>
+          <span class="ex-pill">Competitor service</span>
+          <span class="ex-pill">Spammy pro (with strong evidence)</span>
+        </div>
+        <div class="inline-note">
+          <strong>Note</strong>Blocklist reason language varies by violation — see the Summary of Admin Actions & Tagging for the exact tag (Community Standards Violation, Scam/Fake Requests, Minor/Underage).
+        </div>
+        <div class="pattern-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+          <button class="btn btn-primary" data-review>Got it ✓</button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <!-- ========== ZONE 2: DRILL ========== -->
+  <div class="zone-header">
+    <div class="zone-tag">PART 2</div>
+    <h2 class="zone-h">Diagnose the path</h2>
+    <p class="zone-sub">Five short scenarios. For each one, pick the action path that applies.</p>
+  </div>
+
+  <div class="drill locked" id="drill">
+    <div class="drill-locked-msg" id="drillLockedMsg">
+      🔒 Explore all 5 patterns above to unlock the drill.
+    </div>
+    <div class="drill-content" id="drillContent"></div>
+  </div>
+
+  <!-- ========== SOAA REFERENCE ========== -->
+  <a href="https://docs.google.com/spreadsheets/d/1wi3cwD2lMpbm0UR0SIZu8PQBQXtE32cMl0EygR_o4YM/edit?gid=1553173945" target="_blank" rel="noopener" style="text-decoration: none; color: inherit;">
+    <div class="soaa-ref">
+      <div class="soaa-icon">📋</div>
+      <div class="soaa-body">
+        <h4>Need the violation-by-violation breakdown?</h4>
+        <p>The Summary of Admin Actions & Tagging is the source of truth for tag wording, exact action sequences, and edge cases. Bookmark it.</p>
+      </div>
+      <span class="soaa-link">Open the spreadsheet →</span>
+    </div>
+  </a>
+
+</div>
+
+<script>
+(function() {
+
+  // ============================================================
+  // PATTERN EXPLORATION
+  // ============================================================
+
+  const reviewed = new Set();
+  const patterns = document.querySelectorAll('.pattern');
+  const progressCount = document.getElementById('progressCount');
+  const progressFill = document.getElementById('progressFill');
+  const drill = document.getElementById('drill');
+  const drillLockedMsg = document.getElementById('drillLockedMsg');
+  const drillContent = document.getElementById('drillContent');
+
+  function collapseAll(except) {
+    patterns.forEach(p => {
+      if (p !== except) {
+        p.classList.remove('expanded');
+        p.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function togglePattern(card) {
+    const isOpen = card.classList.contains('expanded');
+    collapseAll(card);
+    if (!isOpen) {
+      card.classList.add('expanded');
+      card.setAttribute('aria-expanded', 'true');
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+    } else {
+      card.classList.remove('expanded');
+      card.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  patterns.forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('button')) return;
+      togglePattern(card);
+    });
+    card.addEventListener('keydown', e => {
+      if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('button')) {
+        e.preventDefault();
+        togglePattern(card);
+      }
+      if (e.key === 'Escape' && card.classList.contains('expanded')) {
+        card.classList.remove('expanded');
+        card.setAttribute('aria-expanded', 'false');
+      }
+    });
+    card.querySelector('[data-collapse]').addEventListener('click', () => {
+      card.classList.remove('expanded');
+      card.setAttribute('aria-expanded', 'false');
+    });
+    card.querySelector('[data-review]').addEventListener('click', () => {
+      const id = card.dataset.id;
+      if (!reviewed.has(id)) {
+        reviewed.add(id);
+        card.classList.add('reviewed');
+        updateProgress();
+      }
+      card.classList.remove('expanded');
+      card.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  function updateProgress() {
+    const n = reviewed.size;
+    progressCount.textContent = n;
+    progressFill.style.width = (n / 5 * 100) + '%';
+    if (n === 5) {
+      unlockDrill();
+    }
+  }
+
+  function unlockDrill() {
+    drill.classList.remove('locked');
+    drillLockedMsg.classList.add('hidden');
+    drillContent.classList.add('active');
+    initDrill();
+  }
+
+  // ============================================================
+  // DIAGNOSTIC DRILL
+  // ============================================================
+
+  const questions = [
+    {
+      stem: "A request comes in from a user who lists their age as 10.",
+      context: "The conversation shows the user is asking for a service unrelated to school or supervision.",
+      correct: "e",
+      options: [
+        { id: "a", label: "Pattern A — No account action" },
+        { id: "d", label: "Pattern D — Delete the account" },
+        { id: "e", label: "Pattern E — Delete and blocklist" },
+        { id: "b", label: "Pattern B — Hold the account" }
+      ],
+      feedback: {
+        right: "Correct. Minor users under 12 trigger Pattern E — Delete and blocklist. The blocklist prevents re-registration; document the exact age if known.",
+        wrong: "This is Pattern E — Delete and blocklist. Minor users under 12 always trigger the full path: tag, delete request, delete account, blocklist. Pattern D (Delete only) applies to minors aged 13–17."
+      }
+    },
+    {
+      stem: "A user posts a request asking pros to volunteer their services for a charity event.",
+      context: "No payment is offered. No other violations are present.",
+      correct: "a",
+      options: [
+        { id: "a", label: "Pattern A — No account action" },
+        { id: "b", label: "Pattern B — Hold the account" },
+        { id: "d", label: "Pattern D — Delete the account" },
+        { id: "e", label: "Pattern E — Delete and blocklist" }
+      ],
+      feedback: {
+        right: "Correct. Barter or free service triggers Pattern A — tag the violation, delete the request, but the user keeps their account. They haven't done anything that warrants account action.",
+        wrong: "This is Pattern A — No account action. Barter or free service is a request-level violation, not a user-level one. The request gets deleted but the account stays active."
+      }
+    },
+    {
+      stem: "A customer account shows 6 different signals of spammy behavior across multiple requests.",
+      context: "The signals don't meet the threshold for ghosting, deletion, or blocklisting on their own.",
+      correct: "b",
+      options: [
+        { id: "a", label: "Pattern A — No account action" },
+        { id: "b", label: "Pattern B — Hold the account" },
+        { id: "c", label: "Pattern C — Ghost the account" },
+        { id: "e", label: "Pattern E — Delete and blocklist" }
+      ],
+      feedback: {
+        right: "Correct. 5+ spammy signals that don't meet the ghost/delete/blocklist criteria trigger Pattern B — Hold the account for further investigation.",
+        wrong: "This is Pattern B — Hold the account. When spammy signals stack but don't meet the threshold for ghost, delete, or blocklist, you hold the account so it can be investigated. The hold reason is 'User being investigated — Deceptive Practices.'"
+      }
+    },
+    {
+      stem: "A request contains explicit sexual content directed at the pro.",
+      context: "This is a clear-cut case with no ambiguity.",
+      correct: "e",
+      options: [
+        { id: "a", label: "Pattern A — No account action" },
+        { id: "b", label: "Pattern B — Hold the account" },
+        { id: "d", label: "Pattern D — Delete the account" },
+        { id: "e", label: "Pattern E — Delete and blocklist" }
+      ],
+      feedback: {
+        right: "Correct. Sexual content is one of the severe community-standards violations — always Pattern E. Delete the request, delete the account, blocklist with 'Community Standards Violation' as the reason.",
+        wrong: "This is Pattern E — Delete and blocklist. Sexual content is treated as a severe community-standards violation. The full path runs: tag, delete request, delete account, blocklist."
+      }
+    },
+    {
+      stem: "A pro creates a fake customer account to message competing pros and ask for their pricing.",
+      context: "The account exists solely to undermine other pros' bids.",
+      correct: "a",
+      options: [
+        { id: "a", label: "Pattern A — No account action" },
+        { id: "b", label: "Pattern B — Hold the account" },
+        { id: "d", label: "Pattern D — Delete the account" },
+        { id: "e", label: "Pattern E — Delete and blocklist" }
+      ],
+      feedback: {
+        right: "Correct — and this is a tricky one. Competitor Contact Abuse is tagged as a violation and the request is deleted, but per the Summary of Admin Actions & Tagging the account itself doesn't take a separate action. The handling for the pro side happens in a different workflow.",
+        wrong: "This is Pattern A — No account action. Competitor Contact Abuse is one of several violations where the request is deleted but the customer-side account isn't actioned in the standard CMR flow. Pro-side consequences are handled separately."
+      }
+    }
+  ];
+
+  let drillIdx = 0;
+  let drillScore = 0;
+  let drillAnswered = false;
+
+  function initDrill() {
+    drillIdx = 0;
+    drillScore = 0;
+    drillAnswered = false;
+    renderDrillQuestion();
+  }
+
+  function renderDrillQuestion() {
+    drillContent.innerHTML = '';
+    drillAnswered = false;
+    const q = questions[drillIdx];
+
+    const block = document.createElement('div');
+    block.className = 'drill-question';
+
+    const meta = document.createElement('div');
+    meta.className = 'q-meta';
+    meta.innerHTML = `<span>SCENARIO ${drillIdx + 1} OF ${questions.length}</span><span>SCORE: ${drillScore} / ${drillIdx}</span>`;
+    block.appendChild(meta);
+
+    const stem = document.createElement('p');
+    stem.className = 'q-text';
+    stem.textContent = q.stem;
+    block.appendChild(stem);
+
+    const ctx = document.createElement('p');
+    ctx.className = 'q-context';
+    ctx.textContent = q.context;
+    block.appendChild(ctx);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.dataset.optId = opt.id;
+      btn.innerHTML = `<span class="option-letter">${String.fromCharCode(65 + i)}</span>${opt.label}`;
+      btn.addEventListener('click', () => handleAnswer(btn, opt.id, q));
+      opts.appendChild(btn);
+    });
+    block.appendChild(opts);
+
+    drillContent.appendChild(block);
+  }
+
+  function handleAnswer(btn, chosenId, q) {
+    if (drillAnswered) return;
+    drillAnswered = true;
+
+    const isCorrect = chosenId === q.correct;
+    if (isCorrect) drillScore++;
+
+    // Disable all options
+    drillContent.querySelectorAll('.option').forEach(o => {
+      o.disabled = true;
+      if (o.dataset.optId === q.correct) o.classList.add('correct');
+      else if (o === btn) o.classList.add('incorrect');
+    });
+
+    // Render feedback
+    const fb = document.createElement('div');
+    fb.className = 'feedback ' + (isCorrect ? 'right' : 'wrong');
+    const h = document.createElement('h4');
+    h.textContent = isCorrect ? 'Correct' : 'Not quite';
+    fb.appendChild(h);
+    const p = document.createElement('p');
+    p.textContent = isCorrect ? q.feedback.right : q.feedback.wrong;
+    fb.appendChild(p);
+
+    drillContent.querySelector('.drill-question').appendChild(fb);
+
+    // Next button
+    const next = document.createElement('button');
+    next.className = 'drill-next';
+    next.textContent = drillIdx === questions.length - 1 ? 'See your score →' : 'Next scenario →';
+    next.addEventListener('click', () => {
+      if (drillIdx === questions.length - 1) {
+        showFinalScore();
+      } else {
+        drillIdx++;
+        renderDrillQuestion();
+        drill.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+    drillContent.querySelector('.drill-question').appendChild(next);
+  }
+
+  function showFinalScore() {
+    drillContent.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'drill-final';
+
+    const h = document.createElement('h3');
+    let verdict;
+    if (drillScore === 5) verdict = 'Sharp diagnosis.';
+    else if (drillScore >= 3) verdict = 'Good recognition. A couple to sharpen.';
+    else verdict = 'These are tricky — worth a second pass.';
+    h.textContent = verdict;
+    wrap.appendChild(h);
+
+    const score = document.createElement('div');
+    score.className = 'drill-score';
+    score.innerHTML = `<span class="num">${drillScore}</span><span class="total">/ ${questions.length}</span>`;
+    wrap.appendChild(score);
+
+    const p = document.createElement('p');
+    if (drillScore === 5) {
+      p.textContent = "You can spot the pattern from the case description alone. Keep the Summary of Admin Actions & Tagging bookmarked for tag wording and edge cases.";
+    } else if (drillScore >= 3) {
+      p.textContent = "Re-read the patterns you missed and try again. Most CMR cases follow these five paths — the more automatic the recognition, the faster the queue handling.";
+    } else {
+      p.textContent = "Review the five patterns above and try the drill again. Recognition gets faster with practice.";
+    }
+    wrap.appendChild(p);
+
+    const restart = document.createElement('button');
+    restart.className = 'drill-restart';
+    restart.textContent = 'Try the drill again';
+    restart.addEventListener('click', () => {
+      initDrill();
+      drill.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    wrap.appendChild(restart);
+
+    drillContent.appendChild(wrap);
+  }
+
+})();
+</script>
+
+</body>
+</html>
