@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Standard Contact Verification Workflow — CMR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:        #0b1727;
+    --ink-soft:   #475569;
+    --muted:      #94a3b8;
+    --line:       #e2e8f0;
+    --line-soft:  #f1f5f9;
+    --bg:         #fafafa;
+    --surface:    #ffffff;
+
+    --brand:      #0074AD;
+    --brand-deep: #003D5C;
+    --brand-tint: #EAF6FA;
+
+    /* Step accent (mostly muted; Step 2 is the active workhorse) */
+    --step-neutral:      #94a3b8;
+    --step-neutral-tint: #f1f5f9;
+    --step-active:       #0074AD;
+    --step-active-tint:  #EAF6FA;
+
+    --warn:      #d97706;
+    --warn-tint: #FDF7E7;
+
+    --t-fast: 200ms cubic-bezier(.4,0,.2,1);
+    --t-med:  420ms cubic-bezier(.4,0,.2,1);
+
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+
+    --shadow-sm: 0 1px 2px rgba(15,23,42,.04);
+    --shadow-md: 0 4px 12px rgba(15,23,42,.06), 0 2px 4px rgba(15,23,42,.04);
+    --shadow-lg: 0 18px 40px rgba(15,23,42,.10), 0 6px 14px rgba(15,23,42,.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Montserrat", system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 28px 22px 40px;
+  }
+
+  /* =============== HEADER =============== */
+  .page-header {
+    margin-bottom: 22px;
+  }
+  .page-header h1 {
+    margin: 0 0 8px;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--brand-deep);
+    letter-spacing: -0.018em;
+    line-height: 1.2;
+  }
+  .page-header p {
+    margin: 0;
+    font-size: 15.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    max-width: 720px;
+  }
+  .page-header p strong {
+    color: var(--brand-deep);
+    font-weight: 700;
+  }
+
+  /* =============== STEPS =============== */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 18px 22px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--accent);
+    transition: box-shadow var(--t-fast), transform var(--t-fast),
+                border-color var(--t-fast);
+  }
+  .step.expandable {
+    cursor: pointer;
+  }
+  .step.expandable:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+  .step.expandable:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .step.expanded {
+    cursor: default;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent);
+  }
+
+  .step-head {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .step-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+
+  .step-titles { min-width: 0; }
+  .step-name {
+    font-size: 16.5px;
+    font-weight: 700;
+    color: var(--brand-deep);
+    margin: 0 0 2px;
+    line-height: 1.3;
+  }
+  .step-sub {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .step-cta {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    opacity: 0.7;
+    transition: opacity var(--t-fast);
+  }
+  .step.expandable:hover .step-cta { opacity: 1; }
+  .step.expanded .step-cta { display: none; }
+
+  /* Expanded body */
+  .step-body {
+    display: none;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .step.expanded .step-body {
+    display: block;
+    animation: fadeUp var(--t-med);
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Substeps within Step 2 */
+  .substeps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: sub;
+  }
+  .substep {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    align-items: start;
+    counter-increment: sub;
+  }
+  .substep::before {
+    content: counter(sub);
+    grid-column: 1;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--brand-tint);
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 13px;
+    display: grid; place-items: center;
+    margin-top: 1px;
+  }
+  .substep-content {
+    grid-column: 2;
+    min-width: 0;
+  }
+  .substep-content p {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.55;
+  }
+  .substep-content p:last-child { margin-bottom: 0; }
+  .substep-content strong {
+    color: var(--brand-deep);
+    font-weight: 700;
+  }
+
+  /* KA reference link */
+  .ka-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--brand-tint);
+    color: var(--brand);
+    border: 1px solid var(--brand);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-decoration: none;
+    margin-top: 6px;
+    transition: background var(--t-fast), color var(--t-fast);
+  }
+  .ka-link:hover {
+    background: var(--brand);
+    color: white;
+  }
+  .ka-link svg {
+    width: 12px; height: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Inline note */
+  .inline-note {
+    margin-top: 14px;
+    padding: 10px 14px 10px 12px;
+    background: var(--warn-tint);
+    border-left: 3px solid var(--warn);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .inline-note strong {
+    color: #92400e;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  /* Annotated screenshot for Step 4 */
+  .screenshot-wrap {
+    margin-top: 14px;
+    background: var(--brand-tint);
+    border-radius: var(--radius-md);
+    padding: 18px;
+  }
+  .screenshot-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brand);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .screenshot-img {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    background: white;
+    display: block;
+  }
+  .screenshot-caption {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .screenshot-caption strong {
+    color: var(--brand-deep);
+    font-weight: 700;
+    font-style: normal;
+  }
+  .screenshot-placeholder {
+    width: 100%;
+    aspect-ratio: 16/8;
+    border-radius: var(--radius-sm);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        #ffffff,
+        #ffffff 10px,
+        #f1f5f9 10px,
+        #f1f5f9 20px
+      );
+    border: 2px dashed #cbd5e1;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* Step actions */
+  .step-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .btn {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--t-fast);
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border-color: var(--line);
+  }
+  .btn-ghost:hover { background: var(--line-soft); color: var(--ink); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .step-head { grid-template-columns: 36px 1fr; gap: 12px; }
+    .step-num { width: 32px; height: 32px; font-size: 14px; }
+    .step-cta { display: none; }
+    .substep { grid-template-columns: 24px 1fr; gap: 10px; }
+    .substep::before { width: 24px; height: 24px; font-size: 11px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ========== HEADER ========== -->
+  <div class="page-header">
+    <h1>The Standard Contact Verification Workflow</h1>
+    <p>Three steps. Most of the work happens in <strong>Step 2.</strong></p>
+  </div>
+
+  <!-- ========== STEPS ========== -->
+  <div class="steps">
+
+    <!-- STEP 1 -->
+    <article class="step" style="--accent: var(--step-neutral);">
+      <div class="step-head">
+        <div class="step-num">1</div>
+        <div class="step-titles">
+          <h3 class="step-name">Start in the Work Ticket</h3>
+          <p class="step-sub">Open the Syndication Portal link from the Work Ticket Details section. This takes you into the portal where you'll do the review.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- STEP 2 — the workhorse, expandable -->
+    <article class="step expandable" data-id="2" tabindex="0" role="button" aria-expanded="false"
+      style="--accent: var(--step-active);">
+      <div class="step-head">
+        <div class="step-num">2</div>
+        <div class="step-titles">
+          <h3 class="step-name">Review and decide in the Syndication Portal</h3>
+          <p class="step-sub">The five substeps where most decisions get made.</p>
+        </div>
+        <span class="step-cta">Expand →</span>
+      </div>
+
+      <div class="step-body">
+        <ol class="substeps">
+
+          <!-- Substep 1 -->
+          <li class="substep">
+            <div class="substep-content">
+              <p><strong>Review the request for deceptive behavior and TOS violations.</strong> Use the Deceptive Practice Identification KA to determine whether the request shows signs of deceptive behavior or meets the criteria for a violation.</p>
+              <a class="ka-link" href="https://thumbtack.lightning.force.com/lightning/r/Knowledge__kav/ka2Vx0000002BIjIAM/view" target="_blank" rel="noopener">
+                Open Deceptive Practice Identification KA
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
+              </a>
+            </div>
+          </li>
+
+          <!-- Substep 2 -->
+          <li class="substep">
+            <div class="substep-content">
+              <p><strong>Check for strong links to banned accounts or pro accounts.</strong> Use the Linked Accounts Admin Page and the user's default phone number. Use the Linked Account Checking and Universal Actioning KA for guidance on identifying strong links and determining the correct mirrored action.</p>
+              <a class="ka-link" href="https://thumbtack.lightning.force.com/lightning/r/Knowledge__kav/ka2Vx00000028ntIAA/view" target="_blank" rel="noopener">
+                Open Linked Account Checking & Universal Actioning KA
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
+              </a>
+            </div>
+          </li>
+
+          <!-- Substep 3 -->
+          <li class="substep">
+            <div class="substep-content">
+              <p><strong>If the user is strongly linked, mirror the banned account action.</strong> Match the action taken on the linked account so the same enforcement applies consistently.</p>
+            </div>
+          </li>
+
+          <!-- Substep 4 -->
+          <li class="substep">
+            <div class="substep-content">
+              <p><strong>Choose the request action in the Syndication Portal.</strong> Based on what you found in steps 1–3, select the correct action for the request itself.</p>
+            </div>
+          </li>
+
+          <!-- Substep 5 -->
+          <li class="substep">
+            <div class="substep-content">
+              <p><strong>Add notes when deleting the request</strong> — except in cases of sensitive violations like Sexual Content, Discrimination, or similar. For those, the violation tag is enough; no additional notes needed.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="inline-note">
+          <strong>Note</strong>If you're unsure whether a link counts as "strong," the Linked Account KA above has worked examples. When in doubt, escalate before mirroring an action.
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- STEP 3 — placeholder for the original "Step 3" if there's content; right now numbering 1, 2, 5 in the original suggests there are only 3 distinct steps total but renumbered for clarity. Actually looking again, original showed 1, 2, 5 only. Let me match that. -->
+
+    <!-- STEP 3 (was Step 5 in the original — Finish the Work Ticket) -->
+    <article class="step expandable" data-id="3" tabindex="0" role="button" aria-expanded="false"
+      style="--accent: var(--step-active);">
+      <div class="step-head">
+        <div class="step-num">3</div>
+        <div class="step-titles">
+          <h3 class="step-name">Finish the Work Ticket</h3>
+          <p class="step-sub">Complete Outcome and Admin Actions. See the field map.</p>
+        </div>
+        <span class="step-cta">Expand →</span>
+      </div>
+
+      <div class="step-body">
+        <p style="font-size: 14px; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.55;">
+          Back in the Work Ticket, complete the <strong style="color: var(--brand-deep);">Outcome</strong> and <strong style="color: var(--brand-deep);">Admin Actions</strong> fields based on what you found in Step 2. The fields you'll touch are highlighted below.
+        </p>
+
+        <div class="screenshot-wrap">
+          <div class="screenshot-label">WORK TICKET FIELDS</div>
+          <img class="screenshot-img" src="work-ticket-fields.png" alt="Work Ticket details view with Outcome and Admin Actions sections highlighted, showing Routing Skill, Outcome, Outcome Detail, TOS Violations, Internal Notes, Account Actions, and Fides Rules fields." />
+          <p class="screenshot-caption">
+            The three highlighted sections show where the work happens.<br/>
+            <strong>Top left — Details (Step 1):</strong> the Syndication Portal link you open to start the review.<br/>
+            <strong>Right — Outcome (Step 3):</strong> Routing Skill, Outcome, Outcome Detail, TOS Violations, Internal Notes.<br/>
+            <strong>Right — Admin Actions (Step 3):</strong> Account Actions, Fides Rules.
+          </p>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn btn-ghost" data-collapse>Close</button>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const steps = document.querySelectorAll('.step.expandable');
+
+  function collapseAll(except) {
+    steps.forEach(s => {
+      if (s !== except) {
+        s.classList.remove('expanded');
+        s.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  function toggleStep(card) {
+    const isOpen = card.classList.contains('expanded');
+    collapseAll(card);
+    if (!isOpen) {
+      card.classList.add('expanded');
+      card.setAttribute('aria-expanded', 'true');
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+    } else {
+      card.classList.remove('expanded');
+      card.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  steps.forEach(card => {
+    card.addEventListener('click', e => {
+      // Don't toggle if clicking a link or button inside
+      if (e.target.closest('a, button')) return;
+      toggleStep(card);
+    });
+    card.addEventListener('keydown', e => {
+      if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a, button')) {
+        e.preventDefault();
+        toggleStep(card);
+      }
+      if (e.key === 'Escape' && card.classList.contains('expanded')) {
+        card.classList.remove('expanded');
+        card.setAttribute('aria-expanded', 'false');
+      }
+    });
+    const closeBtn = card.querySelector('[data-collapse]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        card.classList.remove('expanded');
+        card.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
